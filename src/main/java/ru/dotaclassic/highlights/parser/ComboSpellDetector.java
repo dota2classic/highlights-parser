@@ -1,0 +1,57 @@
+package ru.dotaclassic.highlights.parser;
+
+import skadistats.clarity.model.CombatLogEntry;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class ComboSpellDetector {
+    private static final long WINDOW_SECONDS = 5;
+
+
+    private record ComboSpellEntry(float time, String attacker, String target) {
+    }
+
+    private String ability;
+    private ArrayList<ComboSpellEntry> events = new ArrayList<>();
+
+
+    public ComboSpellDetector(String ability) {
+        this.ability = ability;
+    }
+
+    public void onCombatLogDamage(float time, CombatLogEntry cle) {
+        var inflictor = cle.getInflictorName();
+        if (inflictor == null || !inflictor.equals(ability)) return;
+        if (!cle.isTargetHero() || cle.isTargetIllusion()) return;
+
+        events.add(new ComboSpellEntry(time, cle.getAttackerName(), cle.getTargetName()));
+    }
+
+    public List<HighlightDTO> getHighlights() {
+        var highlights = new ArrayList<HighlightDTO>();
+        for (int i = 0; i < events.size(); i++) {
+            var start = events.get(i);
+            Set<String> uniqueTargets = new HashSet<>();
+            uniqueTargets.add(start.target());
+
+            var windowStart = start.time();
+
+            for (; i < events.size(); i++) {
+                var next = events.get(i);
+                if (next.time - windowStart <= WINDOW_SECONDS) {
+                    uniqueTargets.add(next.target);
+                } else {
+                    break; // outside time window
+                }
+            }
+
+            if (uniqueTargets.size() >= 2) {
+                highlights.add(new HighlightDTO(start.time, start.attacker, HighlightType.COMBO_SPELL, "%s по %d героям".formatted(ability, uniqueTargets.size())));
+            }
+        }
+        return highlights;
+    }
+}

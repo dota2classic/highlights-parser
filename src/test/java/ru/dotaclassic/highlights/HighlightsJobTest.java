@@ -34,6 +34,14 @@ public class HighlightsJobTest {
         var ultraKill = highlights.stream().filter(t -> t.type() == HighlightType.LOW_HP_KILL).findFirst();
         assertTrue(ultraKill.isPresent());
         assertEquals("npc_dota_hero_beastmaster", ultraKill.get().hero());
+    }
 
+    @Test
+    void testShakerMultiEchoSlam() {
+        var highlights = new HighlightJob().getHighlights(Paths.get("test/shaker.dem"));
+        var echoSlam = highlights.stream().filter(t -> t.type() == HighlightType.COMBO_SPELL && Objects.equals(t.hero(), "npc_dota_hero_earthshaker")).findFirst();
+        assertTrue(echoSlam.isPresent());
+        assertEquals("npc_dota_hero_earthshaker", echoSlam.get().hero());
+        assertTrue(echoSlam.get().comment().contains("по 2 героям"));
     }
 }

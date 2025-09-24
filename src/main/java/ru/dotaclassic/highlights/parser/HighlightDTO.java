@@ -1,6 +1,7 @@
 package ru.dotaclassic.highlights.parser;
 
 public record HighlightDTO(
+        int tick,
         float gameTime,
         String hero,
         HighlightType type,

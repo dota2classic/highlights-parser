@@ -10,6 +10,7 @@ import skadistats.clarity.processor.entities.Entities;
 import skadistats.clarity.processor.entities.OnEntityPropertyChanged;
 import skadistats.clarity.processor.entities.UsesEntities;
 import skadistats.clarity.processor.gameevents.OnCombatLogEntry;
+import skadistats.clarity.processor.reader.OnTickStart;
 import skadistats.clarity.processor.runner.Context;
 import skadistats.clarity.processor.runner.SimpleRunner;
 import skadistats.clarity.source.MappedFileSource;
@@ -33,9 +34,11 @@ public class HighlightJob {
     @Insert
     private Entities entities;
 
+    private int tick = 0;
+
     private final ArrayList<HighlightDTO> highlights = new ArrayList<>();
 
-    private final HashMap<String, LinkedList<Float>> killTimings = new HashMap<>();
+    private final HashMap<String, LinkedList<ReplayTick>> killTimings = new HashMap<>();
 
 
     private float m_flPreGameStartTime = 0;
@@ -76,6 +79,12 @@ public class HighlightJob {
         return sb.toString();
     }
 
+
+    @OnTickStart
+    public void onTickStart(Context ctx, boolean synthetic) {
+        tick = ctx.getTick();
+    }
+
     @OnEntityPropertyChanged(classPattern = "DT_DOTAGamerulesProxy", propertyPattern = "dota_gamerules_data.m_flGameStartTime")
     public void onPreGameStartTimeChanged(Context ctx, Entity e, FieldPath fp) {
         m_flPreGameStartTime = e.getPropertyForFieldPath(fp);
@@ -86,9 +95,12 @@ public class HighlightJob {
         float realGameTime = Math.max(0, cle.getTimestamp() - m_flPreGameStartTime);
         var time = formatGameTime(realGameTime);
 
+
+        var replayTick = new ReplayTick(tick, realGameTime);
+
         switch (cle.getType()) {
             case DOTA_COMBATLOG_DAMAGE:
-                highlightSpells.forEach(csd -> csd.onCombatLogDamage(realGameTime, cle));
+                highlightSpells.forEach(csd -> csd.onCombatLogDamage(replayTick, cle));
                 break;
             case DOTA_COMBATLOG_DEATH:
                 if (cle.getAttackerName().contains("npc_dota_neutral_") && (cle.isTargetHero() && !cle.isTargetIllusion())) {
@@ -96,7 +108,7 @@ public class HighlightJob {
                     // it's a neutral hero kill!
                     killTimings.putIfAbsent("neutral", new LinkedList<>());
                     var heroKills = killTimings.get("neutral");
-                    heroKills.add(realGameTime);
+                    heroKills.add(replayTick);
                 }
 
                 if (!cle.isAttackerHero() || !cle.isTargetHero() || cle.isTargetIllusion()) {
@@ -121,14 +133,14 @@ public class HighlightJob {
 
                     if (healthPercentage < 0.05 && !hackedName.contains("Techies")) {
                         log.info("{} LOW HP KILL!? {} {}", time, hackedName, hp);
-                        highlights.add(new HighlightDTO(realGameTime, cle.getAttackerName(), HighlightType.LOW_HP_KILL, "Убийство на лоу хп"));
+                        highlights.add(new HighlightDTO(tick, realGameTime, cle.getAttackerName(), HighlightType.LOW_HP_KILL, "Убийство на лоу хп"));
                     }
                 }
 
                 killTimings.putIfAbsent(cle.getAttackerName(), new LinkedList<>());
                 var heroKills = killTimings.get(cle.getAttackerName());
 
-                heroKills.add(realGameTime);
+                heroKills.add(replayTick);
                 break;
             default:
                 DOTAUserMessages.DOTA_COMBATLOG_TYPES type = cle.getType();
@@ -140,16 +152,16 @@ public class HighlightJob {
     private void multikills() {
         killTimings.forEach((hero, killTimings) -> {
             float maxStreakInterval = 19;
-            float streakStartTime = 0;
+            ReplayTick streakStartTime = new ReplayTick(0, 0);
             int streak = 0;
 
 
-            for (Float killTiming : killTimings) {
-                boolean isStreakGoing = Math.abs(killTiming - streakStartTime) < maxStreakInterval;
+            for (var killTiming : killTimings) {
+                boolean isStreakGoing = Math.abs(killTiming.time() - streakStartTime.time()) < maxStreakInterval;
                 if (!isStreakGoing) {
                     if (streak > 2) {
                         highlights.add(
-                                new HighlightDTO(streakStartTime, hero, HighlightType.MULTIKILL, "Мультикилл: %d героев".formatted(streak))
+                                new HighlightDTO(streakStartTime.tick(), streakStartTime.time(), hero, HighlightType.MULTIKILL, "Мультикилл: %d героев".formatted(streak))
                         );
                     }
                     streakStartTime = killTiming;
@@ -163,7 +175,11 @@ public class HighlightJob {
             // do we still have a streak?
             if (streak > 2) {
                 highlights.add(
-                        new HighlightDTO(streakStartTime, hero, HighlightType.MULTIKILL, "Мультикилл: %d героев".formatted(streak))
+                        new HighlightDTO(streakStartTime.tick(),
+                                streakStartTime.time(),
+                                hero,
+                                HighlightType.MULTIKILL,
+                                "Мультикилл: %d героев".formatted(streak))
                 );
             }
         });
@@ -174,14 +190,18 @@ public class HighlightJob {
     private void quickKillsHighlights() {
         killTimings.forEach((hero, killTimings) -> {
             float maxStreakInterval = 2;
-            float streakStartTime = 0;
+            ReplayTick streakStartTime = new ReplayTick(0, 0);
             int streak = 0;
-            for (Float killTiming : killTimings) {
-                boolean isStreakGoing = Math.abs(killTiming - streakStartTime) < maxStreakInterval;
+            for (var killTiming : killTimings) {
+                boolean isStreakGoing = Math.abs(killTiming.time() - streakStartTime.time()) < maxStreakInterval;
                 if (!isStreakGoing) {
                     if (streak > 1) {
                         highlights.add(
-                                new HighlightDTO(streakStartTime, hero, HighlightType.QUICK_MULTIKILL, "Быстрый мультикилл: %d героев".formatted(streak))
+                                new HighlightDTO(streakStartTime.tick(),
+                                        streakStartTime.time(),
+                                        hero,
+                                        HighlightType.QUICK_MULTIKILL,
+                                        "Быстрый мультикилл: %d героев".formatted(streak))
                         );
                     }
                     streakStartTime = killTiming;
@@ -194,7 +214,11 @@ public class HighlightJob {
             // do we still have a streak?
             if (streak > 1) {
                 highlights.add(
-                        new HighlightDTO(streakStartTime, hero, HighlightType.QUICK_MULTIKILL, "Быстрый мультикилл: %d героев".formatted(streak))
+                        new HighlightDTO(streakStartTime.tick(),
+                                streakStartTime.time(),
+                                hero,
+                                HighlightType.QUICK_MULTIKILL,
+                                "Быстрый мультикилл: %d героев".formatted(streak))
                 );
             }
 

@@ -1,8 +1,8 @@
 package ru.dotaclassic.highlights.parser;
 
 public record HighlightDTO(
-        int tick,
-        float gameTime,
+        ReplayTick start,
+        ReplayTick finish,
         String hero,
         int heroIndex,
         HighlightType type,
@@ -11,6 +11,6 @@ public record HighlightDTO(
 
     @Override
     public int compareTo(HighlightDTO o) {
-        return Float.compare(this.gameTime, o.gameTime);
+        return Float.compare(this.start.time(), o.start.time());
     }
 }

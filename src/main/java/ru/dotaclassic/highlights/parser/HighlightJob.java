@@ -134,7 +134,15 @@ public class HighlightJob {
 
                     if (healthPercentage < 0.05 && !hackedName.contains("Techies")) {
                         log.info("{} LOW HP KILL!? {} {}", time, hackedName, hp);
-                        highlights.add(new HighlightDTO(tick, realGameTime, cle.getAttackerName(), getHeroIndex(cle.getAttackerName()), HighlightType.LOW_HP_KILL, "Убийство на лоу хп"));
+                        highlights.add(
+                                new HighlightDTO(
+                                        replayTick,
+                                        replayTick,
+                                        cle.getAttackerName(),
+                                        getHeroIndex(cle.getAttackerName()),
+                                        HighlightType.LOW_HP_KILL,
+                                        "Убийство на лоу хп")
+                        );
                     }
                 }
 
@@ -178,8 +186,9 @@ public class HighlightJob {
                 } else {
                     if (streak > 2) {
                         highlights.add(
-                                new HighlightDTO(streakStartTime.tick(),
-                                        streakStartTime.time(),
+                                new HighlightDTO(
+                                        streakStartTime,
+                                        streakLastTime,
                                         hero,
                                         getHeroIndex(hero),
                                         HighlightType.MULTIKILL,
@@ -195,8 +204,9 @@ public class HighlightJob {
             // do we still have a streak?
             if (streak > 2) {
                 highlights.add(
-                        new HighlightDTO(streakStartTime.tick(),
-                                streakStartTime.time(),
+                        new HighlightDTO(
+                                streakStartTime,
+                                streakLastTime,
                                 hero,
                                 getHeroIndex(hero),
                                 HighlightType.MULTIKILL,
@@ -212,15 +222,18 @@ public class HighlightJob {
         killTimings.forEach((hero, killTimings) -> {
             float maxStreakInterval = 2;
             ReplayTick streakStartTime = new ReplayTick(0, 0);
+            ReplayTick latest = streakStartTime;
             int streak = 0;
+
             for (var killTiming : killTimings) {
                 boolean isStreakGoing = Math.abs(killTiming.time() - streakStartTime.time()) < maxStreakInterval;
                 if (!isStreakGoing) {
                     // Streak is over!!
                     if (streak > 1) {
                         highlights.add(
-                                new HighlightDTO(streakStartTime.tick(),
-                                        streakStartTime.time(),
+                                new HighlightDTO(
+                                        streakStartTime,
+                                        streakStartTime,
                                         hero,
                                         getHeroIndex(hero),
                                         HighlightType.QUICK_MULTIKILL,
@@ -232,13 +245,14 @@ public class HighlightJob {
                 } else {
                     streak += 1;
                 }
+                latest = killTiming;
             }
 
             // do we still have a streak?
             if (streak > 1) {
                 highlights.add(
-                        new HighlightDTO(streakStartTime.tick(),
-                                streakStartTime.time(),
+                        new HighlightDTO(streakStartTime,
+                                streakStartTime,
                                 hero,
                                 getHeroIndex(hero),
                                 HighlightType.QUICK_MULTIKILL,

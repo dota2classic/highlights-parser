@@ -51,7 +51,13 @@ public class ComboSpellDetector {
             }
 
             if (uniqueTargets.size() >= 2) {
-                highlights.add(new HighlightDTO(start.tick().tick(), start.tick().time(), start.attacker, job.getHeroIndex(start.attacker), HighlightType.COMBO_SPELL, "%s по %d героям".formatted(ability, uniqueTargets.size())));
+                highlights.add(new HighlightDTO(
+                        start.tick(),
+                        start.tick(),
+                        start.attacker,
+                        job.getHeroIndex(start.attacker),
+                        HighlightType.COMBO_SPELL,
+                        "%s по %d героям".formatted(ability, uniqueTargets.size())));
             }
         }
         return highlights;

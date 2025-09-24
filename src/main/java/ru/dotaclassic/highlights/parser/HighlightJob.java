@@ -153,22 +153,28 @@ public class HighlightJob {
         killTimings.forEach((hero, killTimings) -> {
             float maxStreakInterval = 19;
             ReplayTick streakStartTime = new ReplayTick(0, 0);
+            ReplayTick streakLastTime = streakStartTime;
             int streak = 0;
 
 
             for (var killTiming : killTimings) {
-                boolean isStreakGoing = Math.abs(killTiming.time() - streakStartTime.time()) < maxStreakInterval;
-                if (!isStreakGoing) {
+                boolean isStreakGoing = Math.abs(killTiming.time() - streakLastTime.time()) < maxStreakInterval;
+                if (isStreakGoing) {
+                    streak += 1;
+                    streakLastTime = killTiming;
+                } else {
                     if (streak > 2) {
                         highlights.add(
-                                new HighlightDTO(streakStartTime.tick(), streakStartTime.time(), hero, HighlightType.MULTIKILL, "Мультикилл: %d героев".formatted(streak))
+                                new HighlightDTO(streakStartTime.tick(),
+                                        streakStartTime.time(),
+                                        hero,
+                                        HighlightType.MULTIKILL,
+                                        "Мультикилл: %d героев".formatted(streak))
                         );
                     }
+                    streakLastTime = killTiming;
                     streakStartTime = killTiming;
                     streak = 1;
-                } else {
-                    streak += 1;
-                    streakStartTime = killTiming;
                 }
             }
 
@@ -195,6 +201,7 @@ public class HighlightJob {
             for (var killTiming : killTimings) {
                 boolean isStreakGoing = Math.abs(killTiming.time() - streakStartTime.time()) < maxStreakInterval;
                 if (!isStreakGoing) {
+                    // Streak is over!!
                     if (streak > 1) {
                         highlights.add(
                                 new HighlightDTO(streakStartTime.tick(),

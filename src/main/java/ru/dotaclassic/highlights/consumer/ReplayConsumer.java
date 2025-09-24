@@ -46,7 +46,7 @@ public class ReplayConsumer {
                 var highlights = new HighlightJob().getHighlights(replay);
 
                 highlights.stream().sorted().forEach(highlight -> {
-                    log.info("{} {}: {} ({})", formatGameTime(highlight.gameTime()), highlight.hero(), highlight.type(), highlight.comment());
+                    log.info("{} {} {}: {} ({})", highlight.tick(), formatGameTime(highlight.gameTime()), highlight.hero(), highlight.type(), highlight.comment());
                 });
                 log.info("Done getting highlights!");
 

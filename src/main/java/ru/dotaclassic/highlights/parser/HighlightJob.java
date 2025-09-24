@@ -22,7 +22,7 @@ import static ru.dotaclassic.highlights.parser.Utils.formatGameTime;
 
 @UsesEntities
 public class HighlightJob {
-    private static List<ComboSpellDetector> highlightSpells = List.of(
+    private List<ComboSpellDetector> highlightSpells = List.of(
             new ComboSpellDetector("earthshaker_echo_slam"),
             new ComboSpellDetector("enigma_black_hole"),
             new ComboSpellDetector("magnataur_reverse_polarity"),

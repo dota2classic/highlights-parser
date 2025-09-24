@@ -20,16 +20,17 @@ import java.nio.file.Path;
 import java.util.*;
 
 import static ru.dotaclassic.highlights.parser.Utils.formatGameTime;
+import static ru.dotaclassic.highlights.parser.Utils.heroIdByName;
 
 @UsesEntities
 public class HighlightJob {
     private List<ComboSpellDetector> highlightSpells = List.of(
-            new ComboSpellDetector("earthshaker_echo_slam"),
-            new ComboSpellDetector("enigma_black_hole"),
-            new ComboSpellDetector("magnataur_reverse_polarity"),
-            new ComboSpellDetector("phoenix_supernova"),
-            new ComboSpellDetector("queenofpain_sonic_wave"),
-            new ComboSpellDetector("nevermore_requiem")
+            new ComboSpellDetector(this, "earthshaker_echo_slam"),
+            new ComboSpellDetector(this, "enigma_black_hole"),
+            new ComboSpellDetector(this, "magnataur_reverse_polarity"),
+            new ComboSpellDetector(this, "phoenix_supernova"),
+            new ComboSpellDetector(this, "queenofpain_sonic_wave"),
+            new ComboSpellDetector(this, "nevermore_requiem")
     );
     @Insert
     private Entities entities;
@@ -133,7 +134,7 @@ public class HighlightJob {
 
                     if (healthPercentage < 0.05 && !hackedName.contains("Techies")) {
                         log.info("{} LOW HP KILL!? {} {}", time, hackedName, hp);
-                        highlights.add(new HighlightDTO(tick, realGameTime, cle.getAttackerName(), HighlightType.LOW_HP_KILL, "Убийство на лоу хп"));
+                        highlights.add(new HighlightDTO(tick, realGameTime, cle.getAttackerName(), getHeroIndex(cle.getAttackerName()), HighlightType.LOW_HP_KILL, "Убийство на лоу хп"));
                     }
                 }
 
@@ -147,6 +148,18 @@ public class HighlightJob {
                 break;
 
         }
+    }
+
+    public int getHeroIndex(String heroName) {
+        Entity ps = entities.getByDtName("DT_DOTA_PlayerResource");
+        for (int i = 0; i < 10; i++) {
+            Integer some = ps.getProperty("m_nSelectedHeroID." + String.format("%04d", i));
+            if (some == heroIdByName(heroName)) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private void multikills() {
@@ -168,6 +181,7 @@ public class HighlightJob {
                                 new HighlightDTO(streakStartTime.tick(),
                                         streakStartTime.time(),
                                         hero,
+                                        getHeroIndex(hero),
                                         HighlightType.MULTIKILL,
                                         "Мультикилл: %d героев".formatted(streak))
                         );
@@ -184,6 +198,7 @@ public class HighlightJob {
                         new HighlightDTO(streakStartTime.tick(),
                                 streakStartTime.time(),
                                 hero,
+                                getHeroIndex(hero),
                                 HighlightType.MULTIKILL,
                                 "Мультикилл: %d героев".formatted(streak))
                 );
@@ -207,6 +222,7 @@ public class HighlightJob {
                                 new HighlightDTO(streakStartTime.tick(),
                                         streakStartTime.time(),
                                         hero,
+                                        getHeroIndex(hero),
                                         HighlightType.QUICK_MULTIKILL,
                                         "Быстрый мультикилл: %d героев".formatted(streak))
                         );
@@ -224,6 +240,7 @@ public class HighlightJob {
                         new HighlightDTO(streakStartTime.tick(),
                                 streakStartTime.time(),
                                 hero,
+                                getHeroIndex(hero),
                                 HighlightType.QUICK_MULTIKILL,
                                 "Быстрый мультикилл: %d героев".formatted(streak))
                 );

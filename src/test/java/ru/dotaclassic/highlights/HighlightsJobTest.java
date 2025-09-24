@@ -44,4 +44,13 @@ public class HighlightsJobTest {
         assertEquals("npc_dota_hero_earthshaker", echoSlam.get().hero());
         assertTrue(echoSlam.get().comment().contains("по 2 героям"));
     }
+
+
+    @Test
+    void testPlayerIndex() {
+        var highlights = new HighlightJob().getHighlights(Paths.get("test/52089.dem"));
+        var lowHpKill = highlights.stream().filter(t -> t.type() == HighlightType.LOW_HP_KILL && Objects.equals(t.hero(), "npc_dota_hero_phoenix")).findFirst();
+        assertTrue(lowHpKill.isPresent());
+        assertEquals(5, lowHpKill.get().heroIndex());
+    }
 }

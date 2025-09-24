@@ -9,6 +9,7 @@ import java.util.Set;
 
 public class ComboSpellDetector {
     private static final long WINDOW_SECONDS = 5;
+    private final HighlightJob job;
 
 
     private record ComboSpellEntry(ReplayTick tick, String attacker, String target) {
@@ -18,8 +19,9 @@ public class ComboSpellDetector {
     private ArrayList<ComboSpellEntry> events = new ArrayList<>();
 
 
-    public ComboSpellDetector(String ability) {
+    public ComboSpellDetector(HighlightJob job, String ability) {
         this.ability = ability;
+        this.job = job;
     }
 
     public void onCombatLogDamage(ReplayTick tick, CombatLogEntry cle) {
@@ -49,7 +51,7 @@ public class ComboSpellDetector {
             }
 
             if (uniqueTargets.size() >= 2) {
-                highlights.add(new HighlightDTO(start.tick().tick(), start.tick().time(), start.attacker, HighlightType.COMBO_SPELL, "%s по %d героям".formatted(ability, uniqueTargets.size())));
+                highlights.add(new HighlightDTO(start.tick().tick(), start.tick().time(), start.attacker, job.getHeroIndex(start.attacker), HighlightType.COMBO_SPELL, "%s по %d героям".formatted(ability, uniqueTargets.size())));
             }
         }
         return highlights;

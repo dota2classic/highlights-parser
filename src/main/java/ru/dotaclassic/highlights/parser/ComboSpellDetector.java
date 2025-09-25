@@ -10,6 +10,7 @@ import java.util.Set;
 public class ComboSpellDetector {
     private static final long WINDOW_SECONDS = 5;
     private final HighlightJob job;
+    private final int stackCount;
 
 
     private record ComboSpellEntry(ReplayTick tick, String attacker, String target) {
@@ -19,9 +20,10 @@ public class ComboSpellDetector {
     private ArrayList<ComboSpellEntry> events = new ArrayList<>();
 
 
-    public ComboSpellDetector(HighlightJob job, String ability) {
+    public ComboSpellDetector(HighlightJob job, String ability, int stackCount) {
         this.ability = ability;
         this.job = job;
+        this.stackCount = stackCount;
     }
 
     public void onCombatLogDamage(ReplayTick tick, CombatLogEntry cle) {
@@ -50,7 +52,7 @@ public class ComboSpellDetector {
                 }
             }
 
-            if (uniqueTargets.size() >= 2) {
+            if (uniqueTargets.size() >= stackCount) {
                 highlights.add(new HighlightDTO(
                         start.tick(),
                         start.tick(),

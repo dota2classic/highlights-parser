@@ -25,12 +25,12 @@ import static ru.dotaclassic.highlights.parser.Utils.heroIdByName;
 @UsesEntities
 public class HighlightJob {
     private List<ComboSpellDetector> highlightSpells = List.of(
-            new ComboSpellDetector(this, "earthshaker_echo_slam"),
-            new ComboSpellDetector(this, "enigma_black_hole"),
-            new ComboSpellDetector(this, "magnataur_reverse_polarity"),
-            new ComboSpellDetector(this, "phoenix_supernova"),
-            new ComboSpellDetector(this, "queenofpain_sonic_wave"),
-            new ComboSpellDetector(this, "nevermore_requiem")
+            new ComboSpellDetector(this, "earthshaker_echo_slam", 3),
+            new ComboSpellDetector(this, "enigma_black_hole", 2),
+            new ComboSpellDetector(this, "magnataur_reverse_polarity", 3),
+            new ComboSpellDetector(this, "phoenix_supernova", 4),
+            new ComboSpellDetector(this, "queenofpain_sonic_wave", 3),
+            new ComboSpellDetector(this, "nevermore_requiem", 4)
     );
     @Insert
     private Entities entities;

@@ -133,6 +133,6 @@ public class Utils {
 
 
     public static int heroIdByName(String name) {
-        return heroNameToId.get(name);
+        return heroNameToId.getOrDefault(name, -1);
     }
 }

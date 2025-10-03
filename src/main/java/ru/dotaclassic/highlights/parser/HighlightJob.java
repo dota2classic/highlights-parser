@@ -58,15 +58,24 @@ public class HighlightJob {
             new ComboSpellDetector(this, "dark_seer_vacuum", 3),
             new ComboSpellDetector(this, "disruptor_static_storm", 3),
             new ComboSpellDetector(this, "gyrocopter_call_down", 3),
+
+            new ComboSpellDetector(this, "invoker_tornado", 3),
+            new ComboSpellDetector(this, "invoker_chaos_meteor", 3),
+
             new ComboSpellDetector(this, "kunkka_ghostship", 3),
             new ComboSpellDetector(this, "obsidian_destroyer_sanity_eclipse", 3),
             new ComboSpellDetector(this, "puck_dream_coil", 3),
             new ComboSpellDetector(this, "sandking_epicenter", 3),
 
+            new ComboSpellDetector(this, "tidehunter_ravage", 3),
+            new ComboSpellDetector(this, "witch_doctor_death_ward", 3),
+
 
             // Modifiers
             new ComboModifierDetector(this, "modifier_faceless_void_chronosphere_freeze", 3),
-            new ComboModifierDetector(this, "modifier_axe_berserkers_call", 3)
+            new ComboModifierDetector(this, "modifier_axe_berserkers_call", 3),
+            new ComboModifierDetector(this, "modifier_treant_overgrowth", 3),
+            new ComboModifierDetector(this, "modifier_winter_wyvern_winters_curse", 3)
     );
 
     @Insert

@@ -1,12 +1,12 @@
 package ru.dotaclassic.highlights.parser;
 
 
+import ru.dotaclassic.highlights.parser.algorithm.ClusteringGameEvent;
+import ru.dotaclassic.highlights.parser.algorithm.QuickClusterAlgorithm;
 import skadistats.clarity.model.CombatLogEntry;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class ComboSpellDetector implements ReplayListener {
     private static final long WINDOW_SECONDS = 5;
@@ -14,7 +14,21 @@ public class ComboSpellDetector implements ReplayListener {
     private final int stackCount;
 
 
-    private record ComboSpellEntry(ReplayTick tick, String attacker, String target) {
+    @Override
+    public List<HighlightDTO> getHighlights() {
+        var combos = QuickClusterAlgorithm.getHighlights(
+                events,
+                WINDOW_SECONDS,
+                stackCount
+        );
+
+        return combos.stream().map(combo -> new HighlightDTO(
+                combo.tick(),
+                combo.tick(),
+                combo.attacker(),
+                job.getHeroIndex(combo.attacker()),
+                HighlightType.COMBO_SPELL,
+                "%s по %d героям".formatted(ability, combo.uniqueTargets().size()))).toList();
     }
 
     private String ability;
@@ -36,35 +50,6 @@ public class ComboSpellDetector implements ReplayListener {
         events.add(new ComboSpellEntry(tick, cle.getAttackerName(), cle.getTargetName()));
     }
 
-    @Override
-    public List<HighlightDTO> getHighlights() {
-        var highlights = new ArrayList<HighlightDTO>();
-        for (int i = 0; i < events.size(); i++) {
-            var start = events.get(i);
-            Set<String> uniqueTargets = new HashSet<>();
-            uniqueTargets.add(start.target());
-
-            var windowStart = start.tick.time();
-
-            for (; i < events.size(); i++) {
-                var next = events.get(i);
-                if (next.tick.time() - windowStart <= WINDOW_SECONDS) {
-                    uniqueTargets.add(next.target);
-                } else {
-                    break; // outside time window
-                }
-            }
-
-            if (uniqueTargets.size() >= stackCount) {
-                highlights.add(new HighlightDTO(
-                        start.tick(),
-                        start.tick(),
-                        start.attacker,
-                        job.getHeroIndex(start.attacker),
-                        HighlightType.COMBO_SPELL,
-                        "%s по %d героям".formatted(ability, uniqueTargets.size())));
-            }
-        }
-        return highlights;
+    private record ComboSpellEntry(ReplayTick tick, String attacker, String target) implements ClusteringGameEvent {
     }
 }

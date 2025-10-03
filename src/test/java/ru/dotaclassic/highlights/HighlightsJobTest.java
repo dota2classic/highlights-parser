@@ -3,6 +3,7 @@ package ru.dotaclassic.highlights;
 import org.junit.jupiter.api.Test;
 import ru.dotaclassic.highlights.parser.HighlightJob;
 import ru.dotaclassic.highlights.parser.HighlightType;
+import ru.dotaclassic.highlights.parser.Utils;
 
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -54,15 +55,26 @@ public class HighlightsJobTest {
         assertEquals(5, lowHpKill.get().heroIndex());
     }
 
+    @Test
+    void testTechiesKills() {
+        var highlights = new HighlightJob().getHighlights(Paths.get("test/techies.dem"));
+        highlights.forEach(highlight -> {
+            System.out.printf("%s %s: %s%n", Utils.formatGameTime(highlight.start().time()), highlight.hero(), highlight.comment());
+        });
+    }
+
 
     @Test
-    void testModifiers() {
+    void testModifiersAxe() {
         var highlights = new HighlightJob().getHighlights(Paths.get("test/axe.dem"));
+        assertEquals("modifier_axe_berserkers_call по 2 героям", highlights.getFirst().comment());
+    }
+
+    @Test
+    void testModifiersVoid() {
+        var highlights = new HighlightJob().getHighlights(Paths.get("test/void.dem"));
         highlights.forEach(highlight -> {
-            System.out.println(highlight.comment());
+            System.out.printf("%s %s%n", Utils.formatGameTime(highlight.start().time()), highlight.comment());
         });
-//        var lowHpKill = highlights.stream().filter(t -> t.type() == HighlightType.COMBO_SPELL && Objects.equals(t.hero(), "npc_dota_hero_phoenix")).findFirst();
-//        assertTrue(lowHpKill.isPresent());
-//        assertEquals(5, lowHpKill.get().heroIndex());
     }
 }

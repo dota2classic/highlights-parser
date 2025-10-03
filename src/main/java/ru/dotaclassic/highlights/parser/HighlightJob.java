@@ -30,9 +30,14 @@ import static ru.dotaclassic.highlights.parser.Utils.heroIdByName;
 @UsesEntities
 @UsesStringTable("ModifierNames")
 public class HighlightJob {
+
+    private static Map<String, String> attackerMapping = Map.of(
+            "npc_dota_techies_land_mine", "npc_dota_hero_teches",
+            "npc_dota_techies_remote_mine", "npc_dota_hero_teches"
+    );
+
     private List<ReplayListener> highlightSpells = List.of(
             // Abilities
-
 
             new ComboSpellDetector(this, "earthshaker_echo_slam", 3),
             new ComboSpellDetector(this, "enigma_black_hole", 2),
@@ -45,10 +50,19 @@ public class HighlightJob {
 
             new ComboSpellDetector(this, "antimage_mana_void", 3),
             new ComboSpellDetector(this, "alchemist_unstable_concoction", 3),
+            new ComboSpellDetector(this, "crystal_maiden_freezing_field", 3),
+            new ComboSpellDetector(this, "dark_seer_vacuum", 3),
+            new ComboSpellDetector(this, "disruptor_static_storm", 3),
+            new ComboSpellDetector(this, "gyrocopter_call_down", 3),
+            new ComboSpellDetector(this, "kunkka_ghostship", 3),
+            new ComboSpellDetector(this, "obsidian_destroyer_sanity_eclipse", 3),
+            new ComboSpellDetector(this, "puck_dream_coil", 3),
+            new ComboSpellDetector(this, "sandking_epicenter", 3),
 
 
             // Modifiers
-            new ComboModifierDetector(this, "modifier_axe_berserkers_call", 2)
+            new ComboModifierDetector(this, "modifier_faceless_void_chronosphere_freeze", 3),
+            new ComboModifierDetector(this, "modifier_axe_berserkers_call", 3)
     );
 
     @Insert
@@ -130,8 +144,6 @@ public class HighlightJob {
 
             var hero = entities.getByHandle(e.getParent());
 
-
-//            System.out.println(entities.g);
             highlightSpells.forEach(listener -> listener.onModifierEvent(
                     replayTick,
                     name,
@@ -150,16 +162,23 @@ public class HighlightJob {
         float realGameTime = Math.max(0, cle.getTimestamp() - m_flPreGameStartTime);
         var time = formatGameTime(realGameTime);
 
-
         var replayTick = new ReplayTick(tick, realGameTime);
+
+
+        var attackerName = cle.getAttackerName();
+        if (attackerName != null && attackerMapping.containsKey(attackerName)) {
+            attackerName = attackerMapping.get(attackerName);
+        }
+
 
         switch (cle.getType()) {
             case DOTA_COMBATLOG_DAMAGE:
                 highlightSpells.forEach(csd -> csd.onCombatLogDamage(replayTick, cle));
                 break;
             case DOTA_COMBATLOG_DEATH:
-                if (cle.getAttackerName().contains("npc_dota_neutral_") && (cle.isTargetHero() && !cle.isTargetIllusion())) {
-                    log.info("Neutrla kill! {} by {}", cle.getTargetName(), cle.getAttackerName());
+                assert attackerName != null;
+                if (attackerName.contains("npc_dota_neutral_") && (cle.isTargetHero() && !cle.isTargetIllusion())) {
+                    log.info("Neutrla kill! {} by {}", cle.getTargetName(), attackerName);
                     // it's a neutral hero kill!
                     killTimings.putIfAbsent("neutral", new LinkedList<>());
                     var heroKills = killTimings.get("neutral");
@@ -170,11 +189,11 @@ public class HighlightJob {
                     return;
                 }
 
-                if (Objects.equals(cle.getTargetName(), cle.getAttackerName())) {
+                if (Objects.equals(cle.getTargetName(), attackerName)) {
                     return;
                 }
 
-                var hackedName = heroNameToDtClassName(cle.getAttackerName());
+                var hackedName = heroNameToDtClassName(attackerName);
 
                 var heroEnt = entities.getByDtName(
                         hackedName
@@ -192,16 +211,16 @@ public class HighlightJob {
                                 new HighlightDTO(
                                         replayTick,
                                         replayTick,
-                                        cle.getAttackerName(),
-                                        getHeroIndex(cle.getAttackerName()),
+                                        attackerName,
+                                        getHeroIndex(attackerName),
                                         HighlightType.LOW_HP_KILL,
                                         "Убийство на лоу хп")
                         );
                     }
                 }
 
-                killTimings.putIfAbsent(cle.getAttackerName(), new LinkedList<>());
-                var heroKills = killTimings.get(cle.getAttackerName());
+                killTimings.putIfAbsent(attackerName, new LinkedList<>());
+                var heroKills = killTimings.get(attackerName);
 
                 heroKills.add(replayTick);
                 break;

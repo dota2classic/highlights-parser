@@ -8,7 +8,7 @@ management:
       show-details: always
 spring:
   rabbitmq:
-    host: ${RABBITMQ_HOST:45.131.187.213}
+    host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASS:guest}

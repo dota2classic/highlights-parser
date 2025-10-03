@@ -92,8 +92,6 @@ public class HighlightJob {
     }
 
 
-
-
     @OnTickStart
     public void onTickStart(Context ctx, boolean synthetic) {
         tick = ctx.getTick();
@@ -330,10 +328,35 @@ public class HighlightJob {
         long tMatch = System.currentTimeMillis() - tStart;
         log.info("total time taken: {}s", (tMatch) / 1000.0);
 
+
+        collectHighlights();
+        deduplicateHighlights();
+    }
+
+    private void collectHighlights() {
         quickKillsHighlights();
         multikills();
 
         highlightSpells.forEach(t -> highlights.addAll(t.getHighlights()));
+    }
+
+    private void deduplicateHighlights() {
+        // if we have multikill and quick multikill starting at same time, we remove multikill
+        var toRemove = new ArrayList<HighlightDTO>();
+
+        for (HighlightDTO highlight : highlights) {
+            if (highlight.type() != HighlightType.QUICK_MULTIKILL) {
+                continue;
+            }
+
+            var duplicates = highlights.stream()
+                    .filter(h -> h.type() == HighlightType.MULTIKILL && Math.abs(h.start().tick() - highlight.start().tick()) < 10)
+                    .toList();
+            toRemove.addAll(duplicates);
+        }
+
+        highlights.removeAll(toRemove);
+        log.info("Removed {} duplicates", toRemove.size());
     }
 
 

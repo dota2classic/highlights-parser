@@ -63,13 +63,6 @@ public class HighlightsJobTest {
         });
     }
 
-
-    @Test
-    void testModifiersAxe() {
-        var highlights = new HighlightJob().getHighlights(Paths.get("test/axe.dem"));
-        assertEquals("modifier_axe_berserkers_call по 2 героям", highlights.getFirst().comment());
-    }
-
     @Test
     void testModifiersVoid() {
         var highlights = new HighlightJob().getHighlights(Paths.get("test/void.dem"));

@@ -1,6 +1,6 @@
 package ru.dotaclassic.highlights.parser.algorithm;
 
-import ru.dotaclassic.highlights.parser.ReplayTick;
+import ru.dotaclassic.highlights.parser.model.ReplayTick;
 
 public interface ClusteringGameEvent {
     String attacker();

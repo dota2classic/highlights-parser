@@ -3,6 +3,9 @@ package ru.dotaclassic.highlights.parser;
 
 import ru.dotaclassic.highlights.parser.algorithm.ClusteringGameEvent;
 import ru.dotaclassic.highlights.parser.algorithm.QuickClusterAlgorithm;
+import ru.dotaclassic.highlights.parser.model.HighlightDTO;
+import ru.dotaclassic.highlights.parser.model.HighlightType;
+import ru.dotaclassic.highlights.parser.model.ReplayTick;
 import skadistats.clarity.model.CombatLogEntry;
 
 import java.util.ArrayList;

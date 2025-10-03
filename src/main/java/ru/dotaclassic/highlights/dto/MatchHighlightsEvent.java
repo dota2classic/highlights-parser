@@ -1,6 +1,6 @@
 package ru.dotaclassic.highlights.dto;
 
-import ru.dotaclassic.highlights.parser.HighlightDTO;
+import ru.dotaclassic.highlights.parser.model.HighlightDTO;
 
 import java.util.List;
 

@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.dotaclassic.highlights.parser.algorithm.ClusteringGameEvent;
 import ru.dotaclassic.highlights.parser.algorithm.QuickClusterAlgorithm;
-import skadistats.clarity.model.CombatLogEntry;
+import ru.dotaclassic.highlights.parser.model.HighlightDTO;
+import ru.dotaclassic.highlights.parser.model.HighlightType;
+import ru.dotaclassic.highlights.parser.model.ReplayTick;
 import skadistats.clarity.model.Entity;
 import skadistats.clarity.wire.dota.common.proto.DOTAModifiers;
 
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static ru.dotaclassic.highlights.parser.Utils.dtClassNameToHeroName;
 import static ru.dotaclassic.highlights.parser.Utils.formatGameTime;
 
 public class ComboModifierDetector implements ReplayListener {
@@ -22,6 +25,7 @@ public class ComboModifierDetector implements ReplayListener {
     private final int stackCount;
     private String modifier;
     private ArrayList<ComboSpellEntry> events = new ArrayList<>();
+
     public ComboModifierDetector(HighlightJob job, String modifier, int stackCount) {
         this.modifier = modifier;
         this.job = job;
@@ -40,9 +44,15 @@ public class ComboModifierDetector implements ReplayListener {
         // Only heroes here
         var time = formatGameTime(tick.time());
 
-//        log.info("{} {} received modifier {} by {} {}", time, target.getDtClass().getDtName(), modifierName, caster.getDtClass().getDtName(), ability.getDtClass().getDtName());
+        if (target.getProperty("m_iTeamNum") == caster.getProperty("m_iTeamNum")) {
+            return;
+        }
 
-        events.add(new ComboSpellEntry(tick, caster.getDtClass().getDtName(), target.getDtClass().getDtName()));
+
+        var cse = new ComboSpellEntry(tick,
+                dtClassNameToHeroName(caster.getDtClass().getDtName()),
+                dtClassNameToHeroName(target.getDtClass().getDtName()));
+        events.add(cse);
     }
 
     public List<HighlightDTO> getHighlights() {

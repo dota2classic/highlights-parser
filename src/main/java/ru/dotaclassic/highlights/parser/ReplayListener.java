@@ -1,5 +1,7 @@
 package ru.dotaclassic.highlights.parser;
 
+import ru.dotaclassic.highlights.parser.model.HighlightDTO;
+import ru.dotaclassic.highlights.parser.model.ReplayTick;
 import skadistats.clarity.model.CombatLogEntry;
 import skadistats.clarity.model.Entity;
 import skadistats.clarity.wire.dota.common.proto.DOTAModifiers;

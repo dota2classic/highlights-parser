@@ -123,6 +123,52 @@ public class Utils {
     );
 
 
+    private static String capitalize(String word) {
+        if (word.isEmpty()) return word;
+        return Character.toUpperCase(word.charAt(0)) + word.substring(1);
+    }
+
+
+    public static String heroNameToDtClassName(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+
+        // Remove "npc_dota_" prefix
+        String withoutPrefix = input.replaceFirst("^npc_dota_", "");
+
+        // Split by underscore
+        String[] parts = withoutPrefix.split("_");
+
+        // Capitalize each part
+        StringBuilder sb = new StringBuilder("DT_DOTA_Unit_");
+        for (int i = 0; i < parts.length; i++) {
+            sb.append(capitalize(parts[i]));
+            if (i < parts.length - 1) {
+                sb.append("_");
+            }
+        }
+
+        return sb.toString();
+    }
+
+
+    public static String dtClassNameToHeroName(String input) {
+        if (input == null) return null;
+
+        // 1. Remove prefix
+        String stripped = input.replaceFirst("^DT_DOTA_Unit_Hero_", "");
+
+        // 2. CamelCase → snake_case
+        String snake = stripped
+                .replaceAll("([a-z0-9])([A-Z])", "$1_$2")
+                .replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")
+                .toLowerCase();
+
+        // 3. Add new prefix
+        return "npc_dota_hero_" + snake;
+    }
+
     public static String formatGameTime(float time) {
         Duration gameTimeMillis = Duration.ofMillis((int) (1000.0f * time));
 

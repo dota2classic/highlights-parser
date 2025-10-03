@@ -2,7 +2,7 @@ package ru.dotaclassic.highlights;
 
 import org.junit.jupiter.api.Test;
 import ru.dotaclassic.highlights.parser.HighlightJob;
-import ru.dotaclassic.highlights.parser.HighlightType;
+import ru.dotaclassic.highlights.parser.model.HighlightType;
 import ru.dotaclassic.highlights.parser.Utils;
 
 import java.nio.file.Paths;

@@ -6,14 +6,19 @@ import skadistats.clarity.event.Insert;
 import skadistats.clarity.model.CombatLogEntry;
 import skadistats.clarity.model.Entity;
 import skadistats.clarity.model.FieldPath;
+import skadistats.clarity.model.StringTable;
 import skadistats.clarity.processor.entities.Entities;
 import skadistats.clarity.processor.entities.OnEntityPropertyChanged;
 import skadistats.clarity.processor.entities.UsesEntities;
 import skadistats.clarity.processor.gameevents.OnCombatLogEntry;
+import skadistats.clarity.processor.modifiers.OnModifierTableEntry;
 import skadistats.clarity.processor.reader.OnTickStart;
 import skadistats.clarity.processor.runner.Context;
 import skadistats.clarity.processor.runner.SimpleRunner;
+import skadistats.clarity.processor.stringtables.StringTables;
+import skadistats.clarity.processor.stringtables.UsesStringTable;
 import skadistats.clarity.source.MappedFileSource;
+import skadistats.clarity.wire.dota.common.proto.DOTAModifiers;
 import skadistats.clarity.wire.dota.common.proto.DOTAUserMessages;
 
 import java.nio.file.Path;
@@ -23,15 +28,32 @@ import static ru.dotaclassic.highlights.parser.Utils.formatGameTime;
 import static ru.dotaclassic.highlights.parser.Utils.heroIdByName;
 
 @UsesEntities
+@UsesStringTable("ModifierNames")
 public class HighlightJob {
-    private List<ComboSpellDetector> highlightSpells = List.of(
+    private List<ReplayListener> highlightSpells = List.of(
+            // Abilities
+
+
             new ComboSpellDetector(this, "earthshaker_echo_slam", 3),
             new ComboSpellDetector(this, "enigma_black_hole", 2),
-            new ComboSpellDetector(this, "magnataur_reverse_polarity", 3),
             new ComboSpellDetector(this, "phoenix_supernova", 4),
             new ComboSpellDetector(this, "queenofpain_sonic_wave", 3),
-            new ComboSpellDetector(this, "nevermore_requiem", 4)
+            new ComboSpellDetector(this, "nevermore_requiem", 4),
+
+            new ComboSpellDetector(this, "magnataur_reverse_polarity", 3),
+            new ComboSpellDetector(this, "magnataur_skewer", 2),
+
+            new ComboSpellDetector(this, "antimage_mana_void", 3),
+            new ComboSpellDetector(this, "alchemist_unstable_concoction", 3),
+
+
+            // Modifiers
+            new ComboModifierDetector(this, "modifier_axe_berserkers_call", 2)
     );
+
+    @Insert
+    private Context ctx;
+
     @Insert
     private Entities entities;
 
@@ -89,6 +111,38 @@ public class HighlightJob {
     @OnEntityPropertyChanged(classPattern = "DT_DOTAGamerulesProxy", propertyPattern = "dota_gamerules_data.m_flGameStartTime")
     public void onPreGameStartTimeChanged(Context ctx, Entity e, FieldPath fp) {
         m_flPreGameStartTime = e.getPropertyForFieldPath(fp);
+    }
+
+    @OnModifierTableEntry()
+    public void onModifierEntry(DOTAModifiers.CDOTAModifierBuffTableEntry e) {
+        if (!e.hasCreationTime()) return;
+        if (!e.hasCaster()) return;
+
+        float realGameTime = Math.max(0, e.getCreationTime() - m_flPreGameStartTime);
+        var replayTick = new ReplayTick(tick, realGameTime);
+
+        StringTables stringTables = ctx.getProcessor(StringTables.class);
+        StringTable baselines = stringTables.forName("ModifierNames");
+        try {
+            var name = baselines.getNameByIndex(e.getModifierClass());
+
+            var caster = entities.getByHandle(e.getParent());
+
+            var hero = entities.getByHandle(e.getParent());
+
+
+//            System.out.println(entities.g);
+            highlightSpells.forEach(listener -> listener.onModifierEvent(
+                    replayTick,
+                    name,
+                    caster,
+                    hero,
+                    entities.getByHandle(e.getAbility()),
+                    e
+            ));
+        } catch (Exception exc) {
+//            log.warn("Exception:", exc);
+        }
     }
 
     @OnCombatLogEntry
@@ -266,7 +320,8 @@ public class HighlightJob {
 
     private void run(Path file) throws Exception {
         long tStart = System.currentTimeMillis();
-        new SimpleRunner(new MappedFileSource(file)).runWith(this);
+        var runner = new SimpleRunner(new MappedFileSource(file));
+        runner.runWith(this);
         long tMatch = System.currentTimeMillis() - tStart;
         log.info("total time taken: {}s", (tMatch) / 1000.0);
 

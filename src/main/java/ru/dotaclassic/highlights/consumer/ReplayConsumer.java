@@ -39,9 +39,13 @@ public class ReplayConsumer {
 
         try {
             var url = "https://cdn.dotaclassic.ru/%s/%s".formatted(event.bucket(), event.key());
+            var isZipped = event.matchId() > 49295 && event.matchId() < 1_000_000;
+            if (!isZipped) {
+                url = url.replace(".zip", "");
+            }
             log.info("Downloading replay from {}", url);
 
-            fileDownloader.getReplay(url, replay -> {
+            fileDownloader.getReplay(url, !isZipped, replay -> {
                 log.info("Downloaded replay: {}", replay.getFileName());
                 var highlights = new HighlightJob().getHighlights(replay);
 

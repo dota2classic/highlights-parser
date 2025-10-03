@@ -27,40 +27,49 @@ public class FileDownloader {
      * @param url      URL of the ZIP file
      * @param consumer Lambda that takes the path of the unzipped directory
      */
-    public void getReplay(String url, Consumer<Path> consumer) throws IOException {
+    public void getReplay(String url, boolean skipUnzipping, Consumer<Path> consumer) throws IOException {
         Path tempZip = Files.createTempFile("download-", ".zip");
         Path tempDir = Files.createTempDirectory("unzipped-");
+        Path tempOutDem = Files.createTempFile("dem-", ".dem");
 
         try {
-            // Download ZIP
-            try (InputStream in = new URI(url).toURL().openStream()) {
-                Files.copy(in, tempZip, StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            // Unzip
-            try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tempZip))) {
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    Path newFile = tempDir.resolve(entry.getName());
-                    if (entry.isDirectory()) {
-                        Files.createDirectories(newFile);
-                    } else {
-                        Files.createDirectories(newFile.getParent());
-                        try (OutputStream out = Files.newOutputStream(newFile)) {
-                            byte[] buffer = new byte[4096];
-                            int len;
-                            while ((len = zis.read(buffer)) > 0) {
-                                out.write(buffer, 0, len);
+            if (skipUnzipping) {
+                // Download DEM
+                try (InputStream in = new URI(url).toURL().openStream()) {
+                    Files.copy(in, tempOutDem, StandardCopyOption.REPLACE_EXISTING);
+                }
+                // We already downloaded .dem file
+                consumer.accept(tempOutDem);
+            } else {
+                // Download ZIP
+                try (InputStream in = new URI(url).toURL().openStream()) {
+                    Files.copy(in, tempZip, StandardCopyOption.REPLACE_EXISTING);
+                }
+                // Unzip
+                try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tempZip))) {
+                    ZipEntry entry;
+                    while ((entry = zis.getNextEntry()) != null) {
+                        Path newFile = tempDir.resolve(entry.getName());
+                        if (entry.isDirectory()) {
+                            Files.createDirectories(newFile);
+                        } else {
+                            Files.createDirectories(newFile.getParent());
+                            try (OutputStream out = Files.newOutputStream(newFile)) {
+                                byte[] buffer = new byte[4096];
+                                int len;
+                                while ((len = zis.read(buffer)) > 0) {
+                                    out.write(buffer, 0, len);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Execute the lambda
-            try (var replayList = Files.list(tempDir)) {
-                var replay = replayList.findFirst().orElseThrow();
-                consumer.accept(replay);
+                // Execute the lambda
+                try (var replayList = Files.list(tempDir)) {
+                    var replay = replayList.findFirst().orElseThrow();
+                    consumer.accept(replay);
+                }
             }
 
         } catch (Exception e) {
@@ -70,6 +79,7 @@ public class FileDownloader {
             Files.deleteIfExists(tempZip);
             // Cleanup extracted files recursively
             deleteDirectoryRecursively(tempDir);
+            Files.deleteIfExists(tempOutDem);
         }
     }
 

@@ -1,5 +1,6 @@
 package ru.dotaclassic.highlights.parser;
 
+
 import skadistats.clarity.model.CombatLogEntry;
 
 import java.util.ArrayList;
@@ -7,7 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class ComboSpellDetector {
+public class ComboSpellDetector implements ReplayListener {
     private static final long WINDOW_SECONDS = 5;
     private final HighlightJob job;
     private final int stackCount;
@@ -26,6 +27,7 @@ public class ComboSpellDetector {
         this.stackCount = stackCount;
     }
 
+    @Override
     public void onCombatLogDamage(ReplayTick tick, CombatLogEntry cle) {
         var inflictor = cle.getInflictorName();
         if (inflictor == null || !inflictor.equals(ability)) return;
@@ -34,6 +36,7 @@ public class ComboSpellDetector {
         events.add(new ComboSpellEntry(tick, cle.getAttackerName(), cle.getTargetName()));
     }
 
+    @Override
     public List<HighlightDTO> getHighlights() {
         var highlights = new ArrayList<HighlightDTO>();
         for (int i = 0; i < events.size(); i++) {

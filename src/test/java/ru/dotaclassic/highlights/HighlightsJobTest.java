@@ -53,4 +53,16 @@ public class HighlightsJobTest {
         assertTrue(lowHpKill.isPresent());
         assertEquals(5, lowHpKill.get().heroIndex());
     }
+
+
+    @Test
+    void testModifiers() {
+        var highlights = new HighlightJob().getHighlights(Paths.get("test/axe.dem"));
+        highlights.forEach(highlight -> {
+            System.out.println(highlight.comment());
+        });
+//        var lowHpKill = highlights.stream().filter(t -> t.type() == HighlightType.COMBO_SPELL && Objects.equals(t.hero(), "npc_dota_hero_phoenix")).findFirst();
+//        assertTrue(lowHpKill.isPresent());
+//        assertEquals(5, lowHpKill.get().heroIndex());
+    }
 }
